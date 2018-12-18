@@ -1,4 +1,4 @@
-package videoCapture;
+package faceRecognition;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -10,41 +10,27 @@ import org.opencv.face.FaceRecognizer;
 import org.opencv.face.FisherFaceRecognizer;
 import org.opencv.imgcodecs.Imgcodecs;
 
-
-public class FaceRecognition {
+public class FacesTraining {
 
   String trainingDir;
   String idetifyPath;
-  Mat testImage;
   Mat trainingImages;
 
   FaceRecognizer faceRecognizer = FisherFaceRecognizer.create();
   // FaceRecognizer faceRecognizer = EigenFaceRecognizer.create();
   // FaceRecognizer faceRecognizer = LBPHFaceRecognizer.create();
 
-  public FaceRecognition(String trainingDir, String identifyPath) {
+  public FacesTraining(String trainingDir, String identifyPath) {
     this.trainingDir = trainingDir;
     this.idetifyPath = identifyPath;
-    this.testImage = Imgcodecs.imread(this.idetifyPath, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
     this.train();
   }
-
 
   private void train() {
     faceRecognizer.train(getImages(), trainingImages);
   }
 
-  public int predict(Mat testImage) {
-    int[] label = new int[1];
-    double[] confidence = new double[1];
-    faceRecognizer.predict(testImage, label, confidence);
-    return label[0];
-  }
-
-
   private List<Mat> getImages() {
-
-
     File root = new File(trainingDir);
 
     FilenameFilter imgFilter = new FilenameFilter() {
