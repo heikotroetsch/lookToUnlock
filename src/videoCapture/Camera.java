@@ -8,7 +8,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfRect;
@@ -27,10 +26,11 @@ public class Camera {
   Mat frame = new Mat();
   JFrame jFame = new JFrame();
   ImageIcon imageFrame = new ImageIcon();
-  
-  public Camera(){
+
+
+  public Camera() {
     this.createWindow();
-    while(true) {
+    while (true) {
       this.update();
     }
   }
@@ -38,28 +38,34 @@ public class Camera {
   public VideoCapture getVideoCapture() {
     return this.capture;
   }
-  
-  public Mat faceDetection() {
-    CascadeClassifier faceDetector = new CascadeClassifier(); 
-    faceDetector.load("haarcascade_frontalface_alt.xml"); 
-    
- // Detecting faces 
-    MatOfRect faceDetections = new MatOfRect(); 
-    faceDetector.detectMultiScale(frame, faceDetections); 
 
-    // Creating a rectangular box showing faces detected 
-    for (Rect rect : faceDetections.toArray()) 
-    { 
-        Imgproc.rectangle(frame, new Point(rect.x, rect.y), 
-         new Point(rect.x + rect.width, rect.y + rect.height), 
-                                       new Scalar(0, 255, 0)); 
-    } 
-
+  private Mat createFaceRecognitionFrame() {
+    for (Rect faces : getFaceLocations()) {
+      Imgproc.rectangle(frame, new Point(faces.x, faces.y),
+          new Point(faces.x + faces.width, faces.y + faces.height), new Scalar(0, 255, 0));
+    }
     return frame;
   }
 
-  
-  public BufferedImage getImage(Mat img) {
+  public BufferedImage getImageFromFaces(Rect face) {
+    BufferedImage image = getImage(this.frame);
+    return image.getSubimage(face.x, face.y, face.width, face.height);
+  }
+
+  public Rect[] getFaceLocations() {
+    CascadeClassifier faceDetector = new CascadeClassifier();
+    faceDetector.load("haarcascade_frontalface_alt.xml");
+
+    // Detecting faces
+    MatOfRect faceDetections = new MatOfRect();
+    faceDetector.detectMultiScale(frame, faceDetections);
+
+    // Creating a rectangular box showing faces detected
+    return faceDetections.toArray();
+  }
+
+
+  private BufferedImage getImage(Mat img) {
     Imgproc.resize(img, img, new Size(640, 480));
     MatOfByte matOfByte = new MatOfByte();
     Imgcodecs.imencode(".jpg", img, matOfByte);
@@ -74,18 +80,18 @@ public class Camera {
     }
     return bufImage;
   }
-  
-  public void update() {
+
+  private void update() {
     capture.read(frame);
-    this.faceDetection();
+    this.createFaceRecognitionFrame();
     imageFrame.setImage(getImage(frame));
     this.jFame.repaint();
   }
-  
-  public void createWindow() {
+
+  private void createWindow() {
     this.update();
     jFame.getContentPane().add(new JLabel(imageFrame));
     jFame.pack();
     jFame.setVisible(true);
-    }
+  }
 }
