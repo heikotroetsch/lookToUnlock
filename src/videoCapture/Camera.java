@@ -20,7 +20,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.videoio.VideoCapture;
 
-public class Camera {
+public class Camera implements Runnable {
 
   VideoCapture capture = new VideoCapture(0);
   Mat frame = new Mat();
@@ -30,9 +30,6 @@ public class Camera {
 
   public Camera() {
     this.createWindow();
-    while (true) {
-      this.update();
-    }
   }
 
   public VideoCapture getVideoCapture() {
@@ -47,10 +44,18 @@ public class Camera {
     return frame;
   }
 
-  public BufferedImage getImageFromFaces(Rect face) {
-    BufferedImage image = getImage(this.frame);
-    return image.getSubimage(face.x, face.y, face.width, face.height);
+  public Mat getImageFromFaces() {
+    Rect[] face = getFaceLocations();
+    if (face.length != 0) {
+      Mat mGray = new Mat();
+      Imgproc.cvtColor(frame.submat(face[0]), mGray, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+      return mGray;
+    } else {
+      return null;
+    }
+
   }
+
 
   public Rect[] getFaceLocations() {
     CascadeClassifier faceDetector = new CascadeClassifier();
@@ -64,11 +69,14 @@ public class Camera {
     return faceDetections.toArray();
   }
 
+  public Mat getFrame() {
+    return this.frame;
+  }
 
-  private BufferedImage getImage(Mat img) {
-    Imgproc.resize(img, img, new Size(640, 480));
+  private BufferedImage getImage() {
+    Imgproc.resize(frame, frame, new Size(640, 480));
     MatOfByte matOfByte = new MatOfByte();
-    Imgcodecs.imencode(".jpg", img, matOfByte);
+    Imgcodecs.imencode(".jpg", frame, matOfByte);
     byte[] byteArray = matOfByte.toArray();
     BufferedImage bufImage = null;
     InputStream in = new ByteArrayInputStream(byteArray);
@@ -84,7 +92,7 @@ public class Camera {
   private void update() {
     capture.read(frame);
     this.createFaceRecognitionFrame();
-    imageFrame.setImage(getImage(frame));
+    imageFrame.setImage(getImage());
     this.jFame.repaint();
   }
 
@@ -93,5 +101,12 @@ public class Camera {
     jFame.getContentPane().add(new JLabel(imageFrame));
     jFame.pack();
     jFame.setVisible(true);
+  }
+
+  @Override
+  public void run() {
+    while (true) {
+      this.update();
+    }
   }
 }
